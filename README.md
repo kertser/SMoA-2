@@ -42,7 +42,7 @@ The architecture is designed to:
 - **Scalability**: The system is built to scale, allowing many requests to be processed concurrently.
 - **Domain Expertise**: The Recommender System dynamically selects the best junior models based on the domain of the prompt, improving accuracy and relevance.
 
-![SMoA Architecture Diagram](./Operators.png)
+![SMoA Architecture Diagram](./Images/Operators.png)
 
 ## Workflow Example
 
