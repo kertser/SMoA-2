@@ -1,0 +1,168 @@
+# Configuration for models and agents
+models:
+  embedding_model_name:
+    model: 'all-MiniLM-L6-v2'
+
+  classification_model:
+    model: 'GPT-4'
+    temperature: 0.5
+    max_tokens: 50
+    context: "You are trained to distinguish between a simple and a complicated prompts in terms of lexico-semantic definitions."
+
+  aggregation_model:
+    model: 'GPT-4'
+    temperature: 0.7
+    max_tokens: 150
+    context: "You are an expert at summarizing information and aggregating content."
+
+  decomposition_model:
+    model: 'GPT-4'
+    temperature: 0.7
+    max_tokens: 150
+    context: "You can split a complicated content into a simple semantic structural units"
+
+# Setting individual configurations for Operators
+operators:
+  base:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50  # Adjusted for shorter outputs
+    context: "You will respond briefly and helpfully to any request."
+
+  analysis:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Analyze the prompt briefly and provide a short, concise explanation."
+
+  definition:
+    model: gpt-4
+    temperature: 0.5
+    max_tokens: 40
+    context: "Provide a brief and clear definition based on the input."
+
+  comparison:
+    model: gpt-3.5-turbo
+    temperature: 0.6
+    max_tokens: 50
+    context: "Offer a brief and direct comparison between the two subjects."
+
+  fact_checking:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Quickly verify the provided information and respond with a brief confirmation or correction."
+
+  clarification:
+    model: gpt-4
+    temperature: 0.6
+    max_tokens: 40
+    context: "Clarify any unclear or ambiguous statements in a short and precise manner."
+
+  reasoning:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Provide logical reasoning in a brief and consistent format."
+
+  hypothesis:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Generate a short, concise hypothesis based on the input prompt."
+
+  contradiction:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Identify contradictions concisely and provide a brief explanation."
+
+  logic_mapping:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Map out the logic in a clear and concise manner, focusing on the key elements."
+
+  emotional_sentiment:
+    model: gpt-3.5-turbo
+    temperature: 0.6
+    max_tokens: 40
+    context: "Briefly analyze the emotional tone and sentiment with a focus on key emotions."
+
+  evaluation:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Provide a short and concise evaluation based on the prompt."
+
+  timeline_mapping:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Map out a timeline of events briefly, focusing on key dates and events."
+
+  conflict_resolution:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Offer a brief solution to resolve the conflict effectively."
+
+  planning:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Briefly outline a clear and simple plan."
+
+  knowledge_retrieval:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Retrieve key information concisely and provide a short answer."
+
+  contextualization:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Provide a brief context to the given information in a short and clear manner."
+
+  counter_argument:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Formulate a short and concise counter-argument based on the input."
+
+  scenario_simulation:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Simulate a brief scenario, focusing on key outcomes based on the prompt."
+
+  validation:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Briefly validate the input information and provide a consistent response."
+
+  quantitative_analysis:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Perform a concise quantitative analysis and provide a short summary."
+
+  benchmarking:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Provide a brief benchmark comparison, focusing on key differences."
+
+  forecasting:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Offer a brief forecast based on historical trends, focusing on key predictions."
+
+  feasibility:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 50
+    context: "Evaluate feasibility briefly, focusing on the most important factors."

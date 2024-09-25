@@ -1,0 +1,18 @@
+openai
+flask[async]
+httpx
+requests
+networkx
+python-dotenv
+pyyaml
+sentence_transformers
+
+dash
+dash-bootstrap-components
+dash-cytoscape
+
+rouge
+huggingface-hub
+sentencepiece
+protobuf
+nltk #??
