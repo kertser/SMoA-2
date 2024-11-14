@@ -6,6 +6,7 @@ networkx
 python-dotenv
 pyyaml
 sentence_transformers
+pydot
 
 dash
 dash-bootstrap-components

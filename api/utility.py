@@ -37,7 +37,6 @@ def load_yaml_config(configFilePath):
     return config
 
 async def openai_post_request(messages, model_name, max_tokens, temperature):
-    # Send a request to the OpenAI API. Will be replaced to custom API call later
     url = "https://api.openai.com/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
@@ -50,16 +49,21 @@ async def openai_post_request(messages, model_name, max_tokens, temperature):
         "temperature": temperature
     }
 
-    retries = 3  # Number of attempts
-    for attempt in range(retries):
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(url, json=payload, headers=headers)
-            response.raise_for_status()  # Check for successful request
-            return response.json()  # Return JSON response from OpenAI API
-        except Exception as e:
-            logging.error(f"Error during OpenAI request: {str(e)}")
-            raise
+    # Log the URL and headers for debugging
+    logging.info(f"Request URL: {url}")
+    logging.info(f"Headers: {headers}")
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(url, json=payload, headers=headers)
+        response.raise_for_status()  # Check for successful request
+        return response.json()
+    except httpx.HTTPStatusError as http_err:
+        logging.error(f"HTTP error: {http_err.response.status_code} - {http_err.response.text}")
+        raise  # Re-raise the exception after logging
+    except Exception as e:
+        logging.error(f"Error during OpenAI request: {str(e)}")
+        raise
 
 def load_semantic_model():
     """

@@ -1,159 +1,102 @@
 import logging
-from api.utility import openai_post_request
-from api.utility import load_yaml_config, semantic_comparator
+from api.utility import openai_post_request, load_yaml_config
+
 
 class Operator:
-    # Base Operator Class
-    def __init__(self, name, model, context, max_tokens, temperature):
-        """
-        Base Class Operator.
-        :param name: operator name.
-        :param model: LLM model name.
-        :param context: incoming context for the model.
-        :param max_tokens: max tokens for the model.
-        :param temperature: Max temperature for randomness of output.
-        """
+    """Base class for all operators (agents) in the system."""
+
+    def __init__(self, name, config):
         self.name = name
-        self.model = model
-        self.context = context
-        self.max_tokens = max_tokens
-        self.temperature = temperature
+        self.model = config.get('model')
+        self.context = config.get('context', "")
+        self.max_tokens = config.get('max_tokens', 100)
+        self.temperature = config.get('temperature', 0.7)
 
-    async def run(self, user_input, context=None):
-        """
-        Running the operator with the given user input and context.
-        :param user_input: Input from the user.
-        :param context: Context for the model (optional).
-        :return: Response from the model.
-        """
+    async def run(self, task):
+        """Execute the operator's task by interacting with the language model."""
+        messages = [
+            {"role": "system", "content": self.context},
+            {"role": "user", "content": task}
+        ]
         try:
-            messages = [
-                {"role": "system", "content": context if context else self.context},
-                {"role": "user", "content": user_input}
-            ]
-
             response = await openai_post_request(messages, self.model, self.max_tokens, self.temperature)
+            logging.info(f"Response for {self.name} task '{task}': {response}")
             return response['choices'][0]['message']['content']
         except Exception as e:
-            return self.handle_error(e)
-
-    def handle_error(self, error):
-        """
-        Error handling for the operator.
-        :param error: Error message.
-        :return: User-friendly error message.
-        """
-        logging.error(f"Error in {self.name}: {error}")
-        return f"An error occurred while processing your request in {self.name}. Please try again later."
-
-    def set_model(self, model_name):
-        """
-        Defining the model for the operator.
-        :param model_name: Model name.
-        :return: None.
-        """
-        self.model = model_name
+            logging.error(f"Error in {self.name} operator for task '{task}': {e}")
+            return f"Error occurred in {self.name}."
 
 
-class GenericOperator(Operator):
-    # Derived from the base class
-    def __init__(self, operator_type):
-        """
-        Initializes the Generic Operator by loading the specific operator type from the config.
+def load_operators_config(config_path="config/models_config.yaml"):
+    """Load the entire YAML config to retrieve 'models' and 'operators' sections."""
+    config = load_yaml_config(config_path)
+    if 'operators' not in config:
+        raise ValueError("No 'operators' section found in config file")
+    return config
 
-        :param operator_type: The type of the operator (e.g., 'comparison', 'definition', 'analysis').
-        """
-        # Load configuration from the YAML file
-        config = load_yaml_config("config/models_config.yaml")
 
-        # Extract settings for the specified operator type
-        operator_settings = config['operators'].get(operator_type)
+def load_operators(config_path="config/models_config.yaml"):
+    """Load operators dynamically from the 'operators' section in models_config.yaml."""
+    config = load_operators_config(config_path)
+    operators_config = config.get("operators", {})
 
-        # Use default settings if specific settings for operator_type are not found
-        if not operator_settings:
-            raise ValueError(f"Operator type '{operator_type}' not found in the configuration.")
+    if not operators_config:
+        logging.error("No operators found in configuration")
+        return {}
 
-        model = operator_settings.get('model', config['operators']['base']['model'])
-        temperature = operator_settings.get('temperature', config['operators']['base']['temperature'])
-        max_tokens = operator_settings.get('max_tokens', config['operators']['base']['max_tokens'])
-        context = operator_settings.get('context', config['operators']['base']['context'])
+    operators = {}
+    for name, settings in operators_config.items():
+        try:
+            operators[name.lower()] = Operator(name, settings)
+            logging.info(f"Loaded operator: {name}")
+        except Exception as e:
+            logging.error(f"Failed to load operator {name}: {e}")
+    return operators
 
-        # Initialize the base class with appropriate parameters
-        super().__init__(
-            name=f"{operator_type.capitalize()}Operator",
-            model=model,
-            context=context,
-            max_tokens=max_tokens,
-            temperature=temperature
+
+async def find_best_operator_with_llm(task_description, operators_config):
+    """Uses an LLM to determine the best operator for a given task description."""
+    operator_descriptions = "\n".join([
+        f"Operator: {name}\nDescription: {details.get('context', 'No description')}\n"
+        for name, details in operators_config.get('operators', {}).items()
+    ])
+
+    prompt = f"""
+Given the task below, select the most appropriate operator from the list. Only return the operator name in lowercase.
+
+Task: {task_description}
+
+Available Operators:
+{operator_descriptions}
+
+Response format: [operator_name]
+"""
+
+    try:
+        response = await openai_post_request(
+            messages=[
+                {"role": "system", "content": "Select the most appropriate operator for the given task."},
+                {"role": "user", "content": prompt}
+            ],
+            model_name="gpt-4",
+            max_tokens=50,
+            temperature=0.2
         )
 
-    async def run(self, user_input, context=None, redundancy=1):
-        """
-        Run the operator multiple times for redundancy and reliability.
+        operator_name = response['choices'][0]['message']['content'].strip().lower()
+        operator_name = operator_name.replace('[', '').replace(']', '')
 
-        :param user_input: Input from the user.
-        :param context: Optional, specific context for the operator.
-        :param redundancy: Number of times to run the operator (default is 1).
-        :return: Aggregated response from the redundant runs.
-        """
-        results = []
-
-        for _ in range(redundancy):
-            result = await super().run(user_input, context)
-            results.append(result)
-
-        if redundancy > 1:
-            return self.aggregate_results(results)
+        if operator_name in operators_config.get('operators', {}):
+            logging.info(f"Selected operator '{operator_name}' for task '{task_description}'")
+            return operator_name
         else:
-            return results[0]
+            logging.warning(f"Selected operator '{operator_name}' not found in config")
+            return "base"
 
-    @staticmethod
-    def aggregate_results(results, threshold=0.7):
-        """
-        Aggregate the results based on semantic similarity.
-        :param results: List of results to aggregate.
-        :param threshold: Similarity threshold to compare results (default is 0.7).
-        :return: The most consistent result based on semantic similarity.
-        """
-
-        if len(results) == 0:
-            return None
-
-        # To store similarity scores for each result
-        similarity_matrix = []
-
-        # Compare each result with every other result and calculate similarity
-        for i in range(len(results)):
-            current_result_similarities = []
-            for j in range(len(results)):
-                if i != j:
-                    similarity, _ = semantic_comparator(results[i], results[j], threshold)
-                    current_result_similarities.append(similarity)
-
-            # Calculate the average similarity of the current result with all others
-            if len(current_result_similarities) > 0:
-                avg_similarity = sum(current_result_similarities) / len(current_result_similarities)
-            else:
-                avg_similarity = 0  # In case no similarities were calculated
-
-            similarity_matrix.append(avg_similarity)
-
-        # Select the result with the highest average similarity
-        best_result_idx = similarity_matrix.index(max(similarity_matrix))
-
-        return results[best_result_idx]
+    except Exception as e:
+        logging.error(f"Error in operator selection: {e}")
+        return "base"
 
 
-"""
-Usage example:
-from operators import GenericOperator
-
-# Create an operator dynamically for 'comparison'
-operator = GenericOperator('comparison')
-user_input = "Compare solar energy and wind energy."
-
-# Run the operator 3 times for redundancy
-result = await operator.run(user_input, redundancy=3)
-
-print(result)
-"""
+# Initialize AGENT_OPERATORS globally, which will store all loaded operators
+AGENT_OPERATORS = load_operators()
