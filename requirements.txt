@@ -6,6 +6,7 @@ networkx
 python-dotenv
 pyyaml
 sentence_transformers
+transformers
 pydot
 
 dash
@@ -17,3 +18,7 @@ huggingface-hub
 sentencepiece
 protobuf
 nltk #??
+
+# RAG
+numpy
+faiss-cpu
